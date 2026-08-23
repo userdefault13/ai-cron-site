@@ -57,6 +57,23 @@ const features = [
 		name="description"
 		content="Scheduled webhooks for AI agents. Pay per run in USDC on Base via x402. No accounts, no API keys — your wallet is the credential."
 	/>
+	<link rel="canonical" href="https://web-seven-ecru-65.vercel.app/" />
+
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content="cron402" />
+	<meta property="og:title" content="cron402 — pay-per-run cron for AI agents" />
+	<meta
+		property="og:description"
+		content="Schedule webhook calls with a single signed request. $0.008 USDC per run on Base via the x402 protocol."
+	/>
+	<meta property="og:url" content="https://web-seven-ecru-65.vercel.app/" />
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:title" content="cron402 — pay-per-run cron for AI agents" />
+	<meta
+		name="twitter:description"
+		content="$0.008/run cron jobs for AI agents. x402 native, USDC on Base, wallet-signed control."
+	/>
+
 	{@html jsonLd}
 </svelte:head>
 
@@ -84,7 +101,7 @@ const features = [
   "schedule": "*\/5 * * * *",
   "target": { "url": "https://your-agent.example/tick", "method": "POST" }
 }}</code></pre>
-			<figcaption class="dim">Machine-readable spec: <a href="/v1/openapi.json">/v1/openapi.json</a></figcaption>
+			<figcaption class="dim">Machine-readable spec: <a href="https://cron402-api.user-defaults.workers.dev/v1/openapi.json">/v1/openapi.json</a></figcaption>
 		</figure>
 		<p class="cta">
 			<a href="/docs">Integrate your agent →</a>

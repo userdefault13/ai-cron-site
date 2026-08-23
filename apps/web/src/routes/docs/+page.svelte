@@ -19,6 +19,23 @@ const jsonLd = JSON.stringify({
 		name="description"
 		content="Agent integration guide for cron402: x402-paid cron jobs, USDC on Base, wallet-signed management."
 	/>
+	<link rel="canonical" href="https://web-seven-ecru-65.vercel.app/docs" />
+
+	<meta property="og:type" content="article" />
+	<meta property="og:site_name" content="cron402" />
+	<meta property="og:title" content="cron402 agent integration guide" />
+	<meta
+		property="og:description"
+		content="Create scheduled webhook jobs, pay per run via x402 USDC micropayments on Base, manage jobs with EIP-712 wallet signatures."
+	/>
+	<meta property="og:url" content="https://web-seven-ecru-65.vercel.app/docs" />
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:title" content="cron402 agent integration guide" />
+	<meta
+		name="twitter:description"
+		content="x402-paid cron jobs in ~20 lines of TypeScript. USDC on Base."
+	/>
+
 	{@html jsonLd}
 </svelte:head>
 

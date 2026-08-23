@@ -2,6 +2,8 @@ import type { RequestHandler } from "./$types";
 
 export const prerender = true;
 
+const SITE = "https://web-seven-ecru-65.vercel.app";
+
 const AGENT_CRAWLERS = [
 	"GPTBot",
 	"OAI-SearchBot",
@@ -21,7 +23,7 @@ function render(): string {
 	for (const bot of AGENT_CRAWLERS) {
 		lines.push(`User-agent: ${bot}`, "Allow: /");
 	}
-	lines.push("User-agent: *", "Allow: /", "", `Sitemap: none`);
+	lines.push("User-agent: *", "Allow: /", "", `Sitemap: ${SITE}/sitemap.xml`);
 	return lines.join("\n");
 }
 
