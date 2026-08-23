@@ -158,22 +158,27 @@ Six tools for any MCP client: `create_cron`, `topup_cron`, `get_cron`, `pause_cr
 # build from repo root
 pnpm --filter cron402-mcp build
 
-# run against a client config, e.g. Claude Desktop / opencode mcp block:
+# run — key pulled from the abracadabra vault (project "ai-cron-site", Touch ID gated)
+packages/mcp/abra-start.sh
+```
+
+Client config (opencode / Claude Desktop style):
+
+```json
 {
   "mcp": {
     "cron402": {
       "type": "local",
-      "command": ["node", "/path/to/packages/mcp/dist/index.js"],
-      "enabled": true,
-      "env": {
-        "CRON402_PRIVATE_KEY": "0x…",            // funded with USDC on Base Sepolia
-        "CRON402_NETWORK": "eip155:84532",        // eip155:8453 for mainnet
-        "CRON402_API_URL": "https://cron402-api.user-defaults.workers.dev"
-      }
+      "command": ["/path/to/ai-cron-site/packages/mcp/abra-start.sh"],
+      "enabled": true
     }
   }
 }
 ```
+
+Env (optional overrides): `CRON402_NETWORK` (`eip155:84532` default, `eip155:8453` for mainnet), `CRON402_API_URL`, `CRON402_ABRA_PROJECT` (default `ai-cron-site`). If `CRON402_PRIVATE_KEY` is already set in the environment, the vault lookup is skipped.
+
+**Agent wallet:** `0x269B9678bEe6F5E4972C6e65522D763bA510d29f` (Base Sepolia) — stored encrypted in the abracadabra vault as `ai-cron-site / EVM_PRIVATE_KEY`. Fund it with testnet USDC (`0x036CbD53842c5426634e7929541eC2318f3dCF7e`) via https://faucet.circle.com plus a little ETH for gas. This is the *payer*; revenue flows to the Worker's `PAY_TO_ADDRESS` secret.
 
 ---
 
