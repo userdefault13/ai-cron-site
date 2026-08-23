@@ -7,6 +7,8 @@ export interface Env {
 	SKIP_PAYMENTS?: string;
 	CDP_API_KEY_ID?: string;
 	CDP_API_KEY_SECRET?: string;
+	MOLTBOOK_API_KEY?: string;
+	MOLTBOOK_HEARTBEAT_TOKEN?: string;
 }
 
 /** Typed facade over a CronJobDO stub (RPC-style methods). */

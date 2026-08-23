@@ -5,7 +5,7 @@ import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { privateKeyToAccount } from "viem/accounts";
 
 const API = "https://cron402-api.user-defaults.workers.dev";
-const NETWORK = "eip155:84532";
+const NETWORK = process.env.CRON402_NETWORK ?? "eip155:8453";
 
 const key = process.env.CRON402_PRIVATE_KEY
 	?? execSync("abra get ai-cron-site EVM_PRIVATE_KEY", { encoding: "utf8" }).trim();

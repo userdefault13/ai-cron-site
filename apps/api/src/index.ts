@@ -17,6 +17,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { parseManageHeaders, verifyManageSignature } from "./auth";
 import { CdpFacilitatorClient } from "./facilitator";
+import { registerMoltbookRoutes } from "./moltbook";
 import { openApiDocument } from "./openapi";
 import { extractPayer, isHexAddress, normalizeAddress } from "./payments";
 import { CronJobDO, nextRunFrom } from "./scheduler";
@@ -25,6 +26,8 @@ import type { CronJobDOStub, Env } from "./types";
 export { CronJobDO };
 
 const app = new Hono<{ Bindings: Env }>();
+
+registerMoltbookRoutes(app);
 
 app.get("/v1/openapi.json", (c) =>
 	c.json(openApiDocument(new URL(c.req.url).origin, c.env.X402_NETWORK || "eip155:84532")),
