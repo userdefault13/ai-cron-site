@@ -142,6 +142,7 @@ function toView(row: JobDbRow): JobView {
 		status: row.status as JobView["status"],
 		nextRunAt: row.next_run_at,
 		createdAt: row.created_at,
+		notifyUrl: row.notify_url,
 	};
 }
 
@@ -199,8 +200,8 @@ app.post("/v1/crons", async (c) => {
 	const id = crypto.randomUUID();
 	const now = Date.now();
 	await c.env.DB.prepare(
-		`INSERT INTO jobs (id, payer_address, schedule, target_url, target_method, target_headers, target_body, credits, status, next_run_at, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'active', NULL, ?)`,
+		`INSERT INTO jobs (id, payer_address, schedule, target_url, target_method, target_headers, target_body, credits, status, next_run_at, created_at, notify_url)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'active', NULL, ?, ?)`,
 	)
 		.bind(
 			id,
@@ -211,6 +212,7 @@ app.post("/v1/crons", async (c) => {
 			parsed.data.target.headers ? JSON.stringify(parsed.data.target.headers) : null,
 			parsed.data.target.body ?? null,
 			now,
+			parsed.data.notifyUrl ?? null,
 		)
 		.run();
 	await c.env.DB.prepare(
@@ -223,6 +225,7 @@ app.post("/v1/crons", async (c) => {
 		id,
 		schedule: parsed.data.schedule,
 		target: parsed.data.target,
+		notifyUrl: parsed.data.notifyUrl ?? null,
 	});
 
 	return c.json({ id, statusUrl: `/v1/crons/${id}`, credits: 1 }, 201);

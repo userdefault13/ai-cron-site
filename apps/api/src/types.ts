@@ -15,6 +15,7 @@ export interface CronJobDOStub {
 		id: string;
 		schedule: string;
 		target: import("@cron402/shared").CronTarget;
+		notifyUrl?: string | null;
 	}): Promise<void>;
 	kick(): Promise<void>;
 	resume(): Promise<void>;

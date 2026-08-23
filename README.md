@@ -62,23 +62,30 @@ dev/ai-cron-site/
 ├── biome.json                 # Biome lint/format config
 ├── .env.example               # all env vars documented
 ├── packages/shared/
-│   └── src/index.ts           # zod schemas, constants, row/view types
+│   └── src/                   # zod schemas, constants, types, JSON Schemas
+├── packages/mcp/
+│   └── src/index.ts           # cron402-mcp: MCP server (6 agent tools)
 └── apps/
     ├── api/                   # Cloudflare Worker
     │   ├── wrangler.jsonc     # DO bindings, D1 binding, cron trigger
     │   ├── .dev.vars.example  # local dev vars template
-    │   ├── migrations/
-    │   │   └── 0001_init.sql  # D1 schema
+    │   ├── migrations/        # D1 schema (0001 init, 0002 notify_url)
     │   └── src/
     │       ├── index.ts       # Hono app, routes, lazy x402 middleware
-    │       ├── scheduler.ts   # CronJobDO (alarm loop, retries, retention)
+    │       ├── scheduler.ts   # CronJobDO (alarm loop, retries, retention, notify)
     │       ├── auth.ts        # EIP-712 management-signature verification
     │       ├── payments.ts    # payer extraction from x402 headers
+    │       ├── facilitator.ts # CDP hosted facilitator client
+    │       ├── cdp-auth.ts    # CDP JWT signing (jose/WebCrypto)
+    │       ├── openapi.ts     # OpenAPI 3.1 document builder
     │       └── types.ts       # Env bindings + typed DO stub interface
-    └── web/                   # SvelteKit 5 → adapter-vercel
+    └── web/                   # SvelteKit 5 → adapter-vercel (MS-DOS theme)
         └── src/routes/
-            ├── +page.svelte   # landing
-            └── docs/+page.svelte # copy-paste integration guide
+            ├── +page.svelte          # landing
+            ├── docs/+page.svelte     # agent integration guide
+            ├── dashboard/+page.svelte # wallet-connected job console
+            ├── llms.txt/+server.ts   # agent-readable site summary
+            └── robots.txt/+server.ts # crawler policy (AI bots allowed)
 ```
 
 ## API reference
@@ -105,6 +112,68 @@ Signed requests add two headers:
 - Min interval: 1 minute · Max 1,000 active jobs per payer wallet
 - Retry policy: 3× with 1s/3s/8s backoff; non-retryable 4xx (except 429) fails immediately
 - Log retention: last 100 executions or 30 days per job, whichever trims first
+
+---
+
+## Deployment status (live)
+
+| Surface | URL |
+|---|---|
+| API (Cloudflare Workers) | https://cron402-api.user-defaults.workers.dev |
+| Web (Vercel) | https://web-seven-ecru-65.vercel.app |
+| OpenAPI spec | https://cron402-api.user-defaults.workers.dev/v1/openapi.json |
+| Agent summary | https://web-seven-ecru-65.vercel.app/llms.txt |
+| Job console | https://web-seven-ecru-65.vercel.app/dashboard |
+
+Network: **Base Sepolia** (`eip155:84532`). Receiving wallet secret `PAY_TO_ADDRESS` is set on the Worker. D1 database `cron402` (id `b7e05d96-4737-4aa4-ab52-badcfacb3a22`) holds the schema from both migrations.
+
+### Execution webhooks
+
+Pass optional `notifyUrl` when creating a job. After every fire, cron402 POSTs to it:
+
+```json
+{
+  "type": "cron402.execution",
+  "jobId": "…",
+  "runAt": 1755000000000,
+  "ok": true,
+  "attempts": 1,
+  "statusCode": 200,
+  "error": null,
+  "durationMs": 42
+}
+```
+
+Notifications are best-effort (10s timeout, never affect scheduling).
+
+### Human dashboard
+
+`/dashboard` connects any injected EIP-1193 wallet (MetaMask etc.). Load a job by id to see status/credits/executions; pause/resume/delete request an `eth_signTypedData_v4` signature over `ManageJob` — exactly what agents sign, just through a browser wallet.
+
+### MCP server (`cron402-mcp`)
+
+Six tools for any MCP client: `create_cron`, `topup_cron`, `get_cron`, `pause_cron`, `resume_cron`, `delete_cron`. Paid calls flow through x402 automatically; management actions are signed locally.
+
+```bash
+# build from repo root
+pnpm --filter cron402-mcp build
+
+# run against a client config, e.g. Claude Desktop / opencode mcp block:
+{
+  "mcp": {
+    "cron402": {
+      "type": "local",
+      "command": ["node", "/path/to/packages/mcp/dist/index.js"],
+      "enabled": true,
+      "env": {
+        "CRON402_PRIVATE_KEY": "0x…",            // funded with USDC on Base Sepolia
+        "CRON402_NETWORK": "eip155:84532",        // eip155:8453 for mainnet
+        "CRON402_API_URL": "https://cron402-api.user-defaults.workers.dev"
+      }
+    }
+  }
+}
+```
 
 ---
 

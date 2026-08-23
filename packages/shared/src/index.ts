@@ -31,6 +31,7 @@ export interface JobDbRow {
 	consecutive_failures: number;
 	next_run_at: number | null;
 	created_at: number;
+	notify_url: string | null;
 }
 
 export interface ExecutionRecord {
@@ -52,6 +53,7 @@ export interface JobView {
 	status: JobStatus;
 	nextRunAt: number | null;
 	createdAt: number;
+	notifyUrl: string | null;
 }
 
 export * from "./json-schema.js";

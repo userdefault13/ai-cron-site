@@ -24,6 +24,12 @@ export const createCronRequestSchema = z.object({
 	schedule: cronScheduleSchema,
 	target: targetSchema,
 	maxRuns: z.number().int().min(1).max(10_000).optional(),
+	notifyUrl: z
+		.string()
+		.url()
+		.max(2048)
+		.optional()
+		.describe("Optional webhook that receives a POST after every execution with the run result"),
 });
 
 export type CreateCronRequest = z.infer<typeof createCronRequestSchema>;

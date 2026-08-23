@@ -16,6 +16,7 @@ export interface JobState {
 	schedule: string;
 	target: CronTarget;
 	status: "active" | "paused" | "exhausted" | "deleted";
+	notifyUrl?: string | null;
 }
 
 export function nextRunFrom(schedule: string, after?: Date): number | null {
@@ -34,12 +35,18 @@ export class CronJobDO extends DurableObject<Env> {
 	declare readonly ctx: DurableObjectState<Env>;
 	declare readonly env: Env;
 
-	async init(job: { id: string; schedule: string; target: CronTarget }): Promise<void> {
+	async init(job: {
+		id: string;
+		schedule: string;
+		target: CronTarget;
+		notifyUrl?: string | null;
+	}): Promise<void> {
 		await this.ctx.storage.put<JobState>("job", {
 			jobId: job.id,
 			schedule: job.schedule,
 			target: job.target,
 			status: "active",
+			notifyUrl: job.notifyUrl ?? null,
 		});
 		const next = nextRunFrom(job.schedule);
 		if (next) {
@@ -101,6 +108,21 @@ export class CronJobDO extends DurableObject<Env> {
 		await this.recordExecution(job.jobId, result);
 		await this.consumeCredit(job.jobId);
 
+		if (job.notifyUrl) {
+			this.ctx.waitUntil(
+				this.notify(job.notifyUrl, {
+					type: "cron402.execution",
+					jobId: job.jobId,
+					runAt: Date.now(),
+					ok: result.ok,
+					attempts: result.attempts,
+					statusCode: result.statusCode,
+					error: result.error,
+					durationMs: result.durationMs,
+				}),
+			);
+		}
+
 		if (!result.ok) {
 			const updated = await this.env.DB.prepare(
 				"UPDATE jobs SET consecutive_failures = consecutive_failures + 1 WHERE id = ? RETURNING consecutive_failures",
@@ -126,6 +148,19 @@ export class CronJobDO extends DurableObject<Env> {
 			await this.setNextRunInDb(job.jobId, next);
 		} else {
 			await this.pause(job, (remaining?.credits ?? 0) <= 0 ? "exhausted" : "paused");
+		}
+	}
+
+	private async notify(url: string, payload: Record<string, unknown>): Promise<void> {
+		try {
+			await fetch(url, {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify(payload),
+				signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_SECONDS * 1000),
+			});
+		} catch {
+			// notifications are best-effort; never affect scheduling
 		}
 	}
 

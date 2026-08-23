@@ -1,0 +1,29 @@
+{
+	"name": "cron402-mcp",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "MCP server exposing cron402 as agent tools — pay-per-run cron jobs settled in USDC on Base via x402",
+	"bin": {
+		"cron402-mcp": "dist/index.js"
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc && node -e \"const fs=require('fs');fs.chmodSync('dist/index.js',0o755)\"",
+		"check": "tsc --noEmit",
+		"start": "node dist/index.js"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.0.4",
+		"@x402/core": "^2.23.0",
+		"@x402/evm": "^2.23.0",
+		"@x402/fetch": "^2.23.0",
+		"viem": "^2.21.0",
+		"zod": "^3.24.1"
+	},
+	"devDependencies": {
+		"@types/node": "^26.2.0"
+	}
+}
