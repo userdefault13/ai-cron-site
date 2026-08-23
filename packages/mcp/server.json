@@ -1,0 +1,54 @@
+{
+	"$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+	"name": "io.github.userdefault13/cron402-mcp",
+	"title": "cron402",
+	"description": "Schedule webhook calls and pay per run in USDC on Base via the x402 protocol. Tools: create_cron, topup_cron, get_cron, pause_cron, resume_cron, delete_cron. No accounts or API keys - payments are signed by the agent's own wallet (EIP-3009), settled gasless through the CDP facilitator. Min interval 1 minute, arbitrary cron expressions, retries with auto-pause, execution logs with status codes and latency.",
+	"version": "1.0.0",
+	"authors": [{ "name": "userdefault13" }],
+	"repository": {
+		"url": "https://github.com/userdefault13/ai-cron-site"
+	},
+	"license": "MIT",
+	"homepage": "https://web-seven-ecru-65.vercel.app",
+	"keywords": [
+		"x402",
+		"cron",
+		"scheduler",
+		"webhook",
+		"usdc",
+		"base",
+		"payments",
+		"ai-agents"
+	],
+	"remotes": [
+		{
+			"type": "stdio",
+			"command": "npx",
+			"args": ["-y", "cron402-mcp"],
+			"environmentVariables": [
+				{
+					"name": "CRON402_PRIVATE_KEY",
+					"description": "Agent wallet private key (0x…). Fund with USDC on Base mainnet (eip155:8453) or Sepolia (eip155:84532 via CRON402_NETWORK).",
+					"required": true
+				},
+				{
+					"name": "CRON402_NETWORK",
+					"description": "CAIP-2 network id. Default eip155:8453 (Base mainnet); use eip155:84532 for Base Sepolia.",
+					"required": false
+				},
+				{
+					"name": "CRON402_API_URL",
+					"description": "cron402 API base URL. Defaults to the production Worker.",
+					"required": false
+				}
+			]
+		}
+	],
+	"packages": [
+		{
+			"registryType": "npm",
+			"identifier": "cron402-mcp",
+			"version": "1.0.0"
+		}
+	]
+}
