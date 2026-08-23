@@ -9,9 +9,6 @@
 		"preview": "vite preview",
 		"check": "svelte-check --tsconfig ./tsconfig.json"
 	},
-	"dependencies": {
-		"@cron402/shared": "workspace:*"
-	},
 	"devDependencies": {
 		"@sveltejs/adapter-vercel": "^5.5.2",
 		"@sveltejs/kit": "^2.15.0",

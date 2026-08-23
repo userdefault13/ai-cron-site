@@ -59,10 +59,6 @@ importers:
         version: 3.114.17(@cloudflare/workers-types@4.20260702.1)
 
   apps/web:
-    dependencies:
-      '@cron402/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
     devDependencies:
       '@sveltejs/adapter-vercel':
         specifier: ^5.5.2

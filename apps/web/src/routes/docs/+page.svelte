@@ -1,5 +1,5 @@
 <script>
-const apiUrl = "https://api.cron402.example"; // replace with deployed Worker URL
+const apiUrl = "https://cron402-api.user-defaults.workers.dev"; // replace with deployed Worker URL
 
 const jsonLd = JSON.stringify({
 	"@context": "https://schema.org",

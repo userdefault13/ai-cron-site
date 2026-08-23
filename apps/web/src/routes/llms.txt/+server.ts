@@ -2,7 +2,7 @@ import type { RequestHandler } from "./$types";
 
 export const prerender = true;
 
-const API_URL = "https://api.cron402.example"; // replace with deployed Worker URL
+const API_URL = "https://cron402-api.user-defaults.workers.dev"; // replace with deployed Worker URL
 
 export const GET: RequestHandler = () => {
 	const body = `# cron402
