@@ -1,9 +1,13 @@
 import {
+	createCronRequestJsonSchema,
 	createCronRequestSchema,
+	createCronResponseJsonSchema,
 	type JobDbRow,
 	type JobView,
 	MAX_ACTIVE_JOBS_PER_WALLET,
 	PRICE_PER_RUN_USD,
+	topupRequestJsonSchema,
+	topupResponseJsonSchema,
 } from "@cron402/shared";
 import type { RoutesConfig } from "@x402/core/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
@@ -13,6 +17,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { parseManageHeaders, verifyManageSignature } from "./auth";
 import { CdpFacilitatorClient } from "./facilitator";
+import { openApiDocument } from "./openapi";
 import { extractPayer, isHexAddress, normalizeAddress } from "./payments";
 import { CronJobDO, nextRunFrom } from "./scheduler";
 import type { CronJobDOStub, Env } from "./types";
@@ -21,11 +26,30 @@ export { CronJobDO };
 
 const app = new Hono<{ Bindings: Env }>();
 
+app.get("/v1/openapi.json", (c) =>
+	c.json(openApiDocument(new URL(c.req.url).origin, c.env.X402_NETWORK || "eip155:84532")),
+);
+
 const TOPUP_PACKS = [
 	{ path: "/v1/crons/topup/1", runs: 1, price: PRICE_PER_RUN_USD },
 	{ path: "/v1/crons/topup/10", runs: 10, price: 0.08 },
 	{ path: "/v1/crons/topup/100", runs: 100, price: 0.8 },
 ] as const;
+
+function bazaarExtension(
+	description: string,
+	input: Record<string, unknown>,
+	output: Record<string, unknown>,
+) {
+	return {
+		bazaar: {
+			description,
+			input,
+			output,
+			mimeType: "application/json",
+		},
+	};
+}
 
 function routesConfig(env: Env): RoutesConfig {
 	const network = (env.X402_NETWORK || "eip155:84532") as `${string}:${string}`;
@@ -38,8 +62,14 @@ function routesConfig(env: Env): RoutesConfig {
 				network,
 				payTo: env.PAY_TO_ADDRESS,
 			},
-			description: "cron402: create cron job (includes 1 run credit)",
+			description:
+				"cron402: create a cron job that calls your webhook on a schedule. $0.008 includes 1 run credit; each subsequent run costs 1 credit (top up at /v1/crons/topup/{pack}).",
 			mimeType: "application/json",
+			extensions: bazaarExtension(
+				"Create a scheduled webhook job. Body: cron expression + target URL/method/headers/body. Returns { id } — poll /v1/crons/{id} for status and execution logs.",
+				createCronRequestJsonSchema,
+				createCronResponseJsonSchema,
+			),
 		},
 	};
 	for (const pack of TOPUP_PACKS) {
@@ -50,8 +80,13 @@ function routesConfig(env: Env): RoutesConfig {
 				network,
 				payTo: env.PAY_TO_ADDRESS,
 			},
-			description: `cron402: ${pack.runs} run credit${pack.runs > 1 ? "s" : ""}`,
+			description: `cron402: add ${pack.runs} prepaid run credit${pack.runs > 1 ? "s" : ""} ($${pack.price}) to an existing job. Reactivates exhausted jobs.`,
 			mimeType: "application/json",
+			extensions: bazaarExtension(
+				`Top up ${pack.runs} run credit${pack.runs > 1 ? "s" : ""} for job jobId.`,
+				topupRequestJsonSchema,
+				topupResponseJsonSchema,
+			),
 		};
 	}
 	return routes as RoutesConfig;
