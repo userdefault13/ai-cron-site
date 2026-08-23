@@ -25,6 +25,10 @@
       "new_sqlite_classes": ["CronJobDO"]
     }
   ],
+  "vars": {
+    // eip155:84532 = Base Sepolia · eip155:8453 = Base mainnet
+    "X402_NETWORK": "eip155:8453"
+  },
   "triggers": {
     "crons": ["* * * * *"]
   }

@@ -3,7 +3,7 @@
 x402-native **cron-as-a-service for AI agents**. Agents schedule webhook calls and pay per run in USDC on Base via the [x402 protocol](https://www.x402.org/) — no accounts, no API keys. The wallet *is* the credential.
 
 - **Price:** $0.008 flat per run
-- **Network:** Base Sepolia (`eip155:84532`) → Base mainnet (`eip155:8453`) via env var
+- **Network:** Base mainnet (`eip155:8453`) — validated end-to-end on Sepolia first (settlement tx `0x01f7bed4…`)
 - **Wallets:** built for Coinbase Agentic Wallets / any x402 client
 
 ---
@@ -125,7 +125,9 @@ Signed requests add two headers:
 | Agent summary | https://web-seven-ecru-65.vercel.app/llms.txt |
 | Job console | https://web-seven-ecru-65.vercel.app/dashboard |
 
-Network: **Base Sepolia** (`eip155:84532`). Receiving wallet secret `PAY_TO_ADDRESS` is set on the Worker. D1 database `cron402` (id `b7e05d96-4737-4aa4-ab52-badcfacb3a22`) holds the schema from both migrations.
+Network: **Base mainnet** (`eip155:8453`) — flipped from Sepolia after a fully verified paid run. Receiving wallet secret `PAY_TO_ADDRESS` is set on the Worker. Facilitator: **Coinbase CDP hosted** (`CDP_API_KEY_ID`/`CDP_API_KEY_SECRET` secrets set; JWT auth implemented in `src/cdp-auth.ts`). D1 database `cron402` (id `b7e05d96-4737-4aa4-ab52-badcfacb3a22`) holds the schema from both migrations.
+
+**Bazaar:** every 402 challenge carries `extensions.bazaar` with full input/output JSON Schemas, and the CDP facilitator advertises the bazaar extension — cron402 surfaces in CDP Bazaar discovery (`/platform/v2/x402/discovery/resources`) as agents transact through it.
 
 ### Execution webhooks
 
@@ -176,9 +178,9 @@ Client config (opencode / Claude Desktop style):
 }
 ```
 
-Env (optional overrides): `CRON402_NETWORK` (`eip155:84532` default, `eip155:8453` for mainnet), `CRON402_API_URL`, `CRON402_ABRA_PROJECT` (default `ai-cron-site`). If `CRON402_PRIVATE_KEY` is already set in the environment, the vault lookup is skipped.
+Env (optional overrides): `CRON402_NETWORK` (`eip155:8453` mainnet default, `eip155:84532` for Sepolia), `CRON402_API_URL`, `CRON402_ABRA_PROJECT` (default `ai-cron-site`). If `CRON402_PRIVATE_KEY` is already set in the environment, the vault lookup is skipped.
 
-**Agent wallet:** `0x269B9678bEe6F5E4972C6e65522D763bA510d29f` (Base Sepolia) — stored encrypted in the abracadabra vault as `ai-cron-site / EVM_PRIVATE_KEY`. Fund it with testnet USDC (`0x036CbD53842c5426634e7929541eC2318f3dCF7e`) via https://faucet.circle.com plus a little ETH for gas. This is the *payer*; revenue flows to the Worker's `PAY_TO_ADDRESS` secret.
+**Agent wallet:** `0x269B9678bEe6F5E4972C6e65522D763bA510d29f` — stored encrypted in the abracadabra vault as `ai-cron-site / EVM_PRIVATE_KEY`. On mainnet it needs **mainnet USDC** (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`) + a little ETH for gas. This is the *payer*; revenue flows to the Worker's `PAY_TO_ADDRESS` secret.
 
 ---
 

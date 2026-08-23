@@ -9,7 +9,7 @@ import { z } from "zod";
 const API_URL = (
 	process.env.CRON402_API_URL ?? "https://cron402-api.user-defaults.workers.dev"
 ).replace(/\/$/, "");
-const NETWORK = process.env.CRON402_NETWORK ?? "eip155:84532";
+const NETWORK = process.env.CRON402_NETWORK ?? "eip155:8453";
 const PRIVATE_KEY = process.env.CRON402_PRIVATE_KEY;
 
 if (!PRIVATE_KEY) {

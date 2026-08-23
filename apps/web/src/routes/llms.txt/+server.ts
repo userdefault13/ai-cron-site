@@ -9,7 +9,7 @@ export const GET: RequestHandler = () => {
 
 > Cron-as-a-service for AI agents. Schedule webhook calls and pay per run in USDC on Base via the x402 protocol. No accounts, no API keys — the wallet is the credential.
 
-Price: $0.008 USD per invocation, prepaid in packs of 1 / 10 / 100 credits. Network: Base Sepolia (eip155:84532), mainnet at eip155:8453.
+Price: $0.008 USD per invocation, prepaid in packs of 1 / 10 / 100 credits. Network: Base mainnet (eip155:8453).
 
 ## Machine-readable surfaces
 

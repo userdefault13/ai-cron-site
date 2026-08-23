@@ -56,7 +56,7 @@ const cdp = new CdpClient();
 const account = await cdp.evm.getOrCreateAccount({ name: "my-agent" });
 
 const client = new x402Client().register(
-  "eip155:84532",                       // base-sepolia
+  "eip155:8453",                       // Base mainnet
   // "eip155:8453",                     // base mainnet
   new ExactEvmScheme(fromCdpEvmAccount(account)),
 );
@@ -155,7 +155,7 @@ await fetch(\`${apiUrl}/v1/crons/\${id}/pause\`, {
 			<li>Failed dispatches retry 3× with backoff, then the job auto-pauses</li>
 			<li>Jobs with zero credits pause automatically; top up to reactivate</li>
 			<li>Execution logs kept: last 100 runs or 30 days per job</li>
-			<li>Currently on Base Sepolia (<code>eip155:84532</code>) — mainnet at <code>eip155:8453</code></li>
+			<li>Live on **Base mainnet** (<code>eip155:8453</code>). Testnet was <code>eip155:84532</code>.</li>
 		</ul>
 	</article>
 

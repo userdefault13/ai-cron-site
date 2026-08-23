@@ -101,7 +101,7 @@ const features = [
 	</section>
 
 	<footer>
-		<p>cron402 · Base Sepolia testnet · x402 protocol</p>
+		<p>cron402 · Base mainnet · x402 protocol</p>
 	</footer>
 </main>
 
