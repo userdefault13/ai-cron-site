@@ -1,0 +1,111 @@
+:root {
+	color-scheme: dark;
+	--bg: #000000;
+	--panel: #0b0b0b;
+	--border: #3a3a3a;
+	--border-bright: #6f6f6f;
+	--text: #c9c9c9;
+	--muted: #808080;
+	--accent: #55ffff; /* cyan */
+	--accent2: #33ff33; /* phosphor green */
+	--warn: #ffb000; /* amber */
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html {
+	background: var(--bg);
+}
+
+body {
+	margin: 0;
+	font-family: "IBM Plex Mono", "Cascadia Mono", "Courier New", ui-monospace, Menlo, Consolas,
+		monospace;
+	background: var(--bg);
+	color: var(--text);
+	line-height: 1.55;
+	font-size: 15px;
+	text-transform: none;
+}
+
+/* subtle CRT scanlines */
+body::after {
+	content: "";
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	background: repeating-linear-gradient(
+		to bottom,
+		transparent 0px,
+		transparent 2px,
+		rgba(255, 255, 255, 0.015) 3px
+	);
+	z-index: 999;
+}
+
+code,
+pre {
+	font-family: inherit;
+	font-size: 0.9rem;
+}
+
+a {
+	color: var(--accent);
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+a::before {
+	content: "[";
+	color: var(--muted);
+}
+a::after {
+	content: "]";
+	color: var(--muted);
+}
+/* don't decorate bracketed content inside nav labels twice */
+nav a::before,
+footer a::before,
+caption a::before,
+figcaption a::before {
+	content: "";
+}
+nav a::after,
+footer a::after,
+caption a::after,
+figcaption a::after {
+	content: "";
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent2);
+	outline-offset: 2px;
+}
+
+.skip {
+	position: absolute;
+	left: -9999px;
+	top: 0;
+	background: var(--bg);
+	color: var(--accent2);
+	padding: 0.5rem 1rem;
+	border: 1px solid var(--accent2);
+	z-index: 1000;
+}
+.skip:focus {
+	left: 0;
+}
+
+::selection {
+	background: var(--accent2);
+	color: #000;
+}
+
+hr {
+	border: 0;
+	border-top: 1px dashed var(--border);
+}

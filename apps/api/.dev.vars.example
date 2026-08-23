@@ -1,0 +1,10 @@
+PAY_TO_ADDRESS=0xYourBaseSepoliaReceivingAddress
+X402_NETWORK=eip155:84532
+# Option A (default): open facilitator, no auth — testnet only
+FACILITATOR_URL=https://x402.org/facilitator
+# Option B: Coinbase CDP hosted facilitator — set both CDP vars and
+# leave FACILITATOR_URL unset (defaults to https://api.cdp.coinbase.com/platform/v2/x402)
+#CDP_API_KEY_ID=organizations/{orgId}/apiKeys/{keyId}
+#CDP_API_KEY_SECRET=your-ed25519-or-ec-secret
+# Local dev only: skip real payment verification
+SKIP_PAYMENTS=1

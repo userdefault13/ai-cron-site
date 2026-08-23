@@ -1,0 +1,29 @@
+{
+	"name": "@cron402/api",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "wrangler dev --port 8787",
+		"build": "tsc --noEmit",
+		"check": "tsc --noEmit",
+		"deploy": "wrangler deploy",
+		"db:local": "wrangler d1 execute cron402 --local --file=migrations/0001_init.sql"
+	},
+	"dependencies": {
+		"@cron402/shared": "workspace:*",
+		"@x402/core": "^2.23.0",
+		"@x402/evm": "^2.23.0",
+		"@x402/hono": "^2.23.0",
+		"cron-parser": "^4.9.0",
+		"hono": "^4.6.14",
+		"jose": "^6.2.10",
+		"viem": "^2.21.0",
+		"zod": "^3.24.1"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20250110.0",
+		"typescript": "^5.7.2",
+		"wrangler": "^3.100.0"
+	}
+}

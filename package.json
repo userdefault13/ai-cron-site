@@ -1,0 +1,18 @@
+{
+	"name": "cron402",
+	"private": true,
+	"packageManager": "pnpm@9.7.1",
+	"scripts": {
+		"build": "turbo run build",
+		"check": "turbo run check",
+		"lint": "biome check .",
+		"format": "biome format --write .",
+		"dev:api": "pnpm --filter @cron402/api dev",
+		"dev:web": "pnpm --filter @cron402/web dev"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.0.6",
+		"turbo": "^2.3.3",
+		"typescript": "^5.7.2"
+	}
+}

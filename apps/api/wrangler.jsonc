@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cron402-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-01-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cron402",
+      "database_id": "b7e05d96-4737-4aa4-ab52-badcfacb3a22"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "CRON_JOB_DO",
+        "class_name": "CronJobDO"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["CronJobDO"]
+    }
+  ],
+  "triggers": {
+    "crons": ["* * * * *"]
+  }
+}
