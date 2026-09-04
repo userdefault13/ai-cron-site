@@ -1,54 +1,58 @@
 {
-	"$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+	"$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
 	"name": "io.github.userdefault13/cron402-mcp",
 	"title": "cron402",
-	"description": "Schedule webhook calls and pay per run in USDC on Base via the x402 protocol. Tools: create_cron, topup_cron, get_cron, pause_cron, resume_cron, delete_cron. No accounts or API keys - payments are signed by the agent's own wallet (EIP-3009), settled gasless through the CDP facilitator. Min interval 1 minute, arbitrary cron expressions, retries with auto-pause, execution logs with status codes and latency.",
-	"version": "1.0.0",
-	"authors": [{ "name": "userdefault13" }],
+	"description": "Schedule webhook calls, pay per run in USDC on Base via x402. Ten tools, built for small models.",
+	"version": "1.1.0",
 	"repository": {
-		"url": "https://github.com/userdefault13/ai-cron-site"
+		"url": "https://github.com/userdefault13/ai-cron-site",
+		"source": "github",
+		"subfolder": "packages/mcp"
 	},
-	"license": "MIT",
-	"homepage": "https://web-seven-ecru-65.vercel.app",
-	"keywords": [
-		"x402",
-		"cron",
-		"scheduler",
-		"webhook",
-		"usdc",
-		"base",
-		"payments",
-		"ai-agents"
-	],
-	"remotes": [
+	"websiteUrl": "https://web-seven-ecru-65.vercel.app",
+	"packages": [
 		{
-			"type": "stdio",
-			"command": "npx",
-			"args": ["-y", "cron402-mcp"],
+			"registryType": "npm",
+			"registryBaseUrl": "https://registry.npmjs.org",
+			"identifier": "cron402-mcp",
+			"version": "1.1.0",
+			"runtimeHint": "npx",
+			"runtimeArguments": [
+				{
+					"type": "named",
+					"name": "-y"
+				}
+			],
+			"transport": {
+				"type": "stdio"
+			},
 			"environmentVariables": [
 				{
 					"name": "CRON402_PRIVATE_KEY",
-					"description": "Agent wallet private key (0x…). Fund with USDC on Base mainnet (eip155:8453) or Sepolia (eip155:84532 via CRON402_NETWORK).",
-					"required": true
+					"description": "Agent wallet private key (0x…). Fund with USDC on Base mainnet or Sepolia. Without it the server starts read-only: the free tools still work.",
+					"isRequired": false,
+					"isSecret": true,
+					"format": "string"
 				},
 				{
 					"name": "CRON402_NETWORK",
-					"description": "CAIP-2 network id. Default eip155:8453 (Base mainnet); use eip155:84532 for Base Sepolia.",
-					"required": false
+					"description": "CAIP-2 network id. Default eip155:8453 (Base mainnet); use eip155:84532 for Sepolia.",
+					"isRequired": false,
+					"format": "string"
 				},
 				{
 					"name": "CRON402_API_URL",
 					"description": "cron402 API base URL. Defaults to the production Worker.",
-					"required": false
+					"isRequired": false,
+					"format": "string"
+				},
+				{
+					"name": "CRON402_STATE_DIR",
+					"description": "Directory where created job ids are remembered so list_crons can recover them. Defaults to ~/.cron402.",
+					"isRequired": false,
+					"format": "string"
 				}
 			]
-		}
-	],
-	"packages": [
-		{
-			"registryType": "npm",
-			"identifier": "cron402-mcp",
-			"version": "1.0.0"
 		}
 	]
 }

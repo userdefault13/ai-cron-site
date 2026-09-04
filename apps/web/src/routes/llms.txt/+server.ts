@@ -14,6 +14,8 @@ Price: $0.008 USD per invocation, prepaid in packs of 1 / 10 / 100 credits. Netw
 ## Machine-readable surfaces
 
 - [OpenAPI 3.1 spec](${API_URL}/v1/openapi.json): complete request/response schemas for every endpoint
+- [MCP server (npm)](https://www.npmjs.com/package/cron402-mcp): \`npx -y cron402-mcp\` — tools: cron402_guide, check_wallet, preview_schedule, create_cron, topup_cron, get_cron, list_crons, pause_cron, resume_cron, delete_cron
+- [MCP Registry](https://registry.modelcontextprotocol.io): search "cron402"
 - Paid endpoints are x402 resources: request without auth, receive HTTP 402 with payment instructions, sign an EIP-3009 USDC transfer with any x402 client (e.g. @x402/fetch + Coinbase Agentic Wallet), retry
 - Management endpoints require an EIP-712 signature over ManageJob { action, jobId, timestamp } from the payer key (±5 min validity)
 

@@ -64,7 +64,10 @@ dev/ai-cron-site/
 ├── packages/shared/
 │   └── src/                   # zod schemas, constants, types, JSON Schemas
 ├── packages/mcp/
-│   └── src/index.ts           # cron402-mcp: MCP server (6 agent tools)
+│   ├── src/index.ts           # cron402-mcp: MCP server (10 agent tools)
+│   ├── src/schedule.ts        # plain-English → cron parsing, validation, next-run preview
+│   └── src/store.ts           # remembers created job ids for list_crons
+├── skills/cron402/SKILL.md    # drop-in agent skill for using the MCP server
 └── apps/
     ├── api/                   # Cloudflare Worker
     │   ├── wrangler.jsonc     # DO bindings, D1 binding, cron trigger
@@ -154,29 +157,72 @@ Notifications are best-effort (10s timeout, never affect scheduling).
 
 ### MCP server (`cron402-mcp`)
 
-Six tools for any MCP client: `create_cron`, `topup_cron`, `get_cron`, `pause_cron`, `resume_cron`, `delete_cron`. Paid calls flow through x402 automatically; management actions are signed locally.
+Ten tools for any MCP client, designed so a **small model can schedule a cron without burning money on mistakes**:
+
+| Tool | Cost | Purpose |
+|---|---|---|
+| `cron402_guide` | free | The full procedure, prices and rules — what a model reads first |
+| `check_wallet` | free | Address, network, USDC/ETH balance, runs affordable |
+| `preview_schedule` | free | Validate a schedule, show the next 5 UTC run times |
+| `create_cron` | $0.008 | Create a job (includes 1 credit) |
+| `topup_cron` | $0.008–$0.80 | Add 1 / 10 / 100 credits |
+| `get_cron` | free | Status, credits, last 20 executions |
+| `list_crons` | free | Jobs created from this machine, with live status |
+| `pause_cron` · `resume_cron` · `delete_cron` | free | EIP-712 signed management |
+
+What makes it usable by weak models:
+
+- **Plain-English schedules** — `"every 15 minutes"`, `"every weekday at 9am"`, `"every monday at 5pm"`, `"weekly"`, or raw cron. Ambiguous input (`"every 2 weeks"`, `"at teatime"`) fails loudly with a suggested fix instead of silently scheduling the wrong time.
+- **Timezone conversion** — pass an IANA `timezone` and the time-of-day is converted to the UTC cron the API stores, with the DST caveat spelled out in the response.
+- **Free dry run before any spend** — `preview_schedule` costs nothing, and `create_cron` re-validates locally so a malformed schedule never reaches a paid request.
+- **Money guardrails** — paid tools are labelled `PAID` with the exact amount, and every response carries a `next_step` telling the model not to call them twice.
+- **Actionable errors** — `{ ok, error, next_step }` for insufficient funds, an unreachable API, a job owned by another wallet, or a `localhost` target.
+- **Job memory** — the API has no list endpoint, so created ids are written to `~/.cron402/jobs.json` (override with `CRON402_STATE_DIR`) and `list_crons` reads them back.
+- **Read-only start** — a missing `CRON402_PRIVATE_KEY` no longer kills the server; free tools keep working and the paid ones explain what to configure.
+
+Paid calls flow through x402 automatically; management actions are signed locally.
+
+### Agent skill (`skills/cron402`)
+
+[`skills/cron402/SKILL.md`](skills/cron402/SKILL.md) teaches an agent the whole workflow — check wallet → preview → confirm → create → top up — plus the rules that keep it from double-charging. Drop it into any project:
 
 ```bash
-# build from repo root
-pnpm --filter cron402-mcp build
-
-# run — key pulled from the abracadabra vault (project "ai-cron-site", Touch ID gated)
-packages/mcp/abra-start.sh
+mkdir -p .claude/skills/cron402
+curl -sL https://raw.githubusercontent.com/userdefault13/ai-cron-site/main/skills/cron402/SKILL.md \
+  -o .claude/skills/cron402/SKILL.md
 ```
 
-Client config (opencode / Claude Desktop style):
+See [skills/README.md](skills/README.md) for other clients.
+
+**Install from npm:**
+
+```bash
+export CRON402_PRIVATE_KEY=0x...   # fund with USDC on Base
+npx -y cron402-mcp
+```
+
+MCP client config (Cursor / Claude Desktop):
 
 ```json
 {
-  "mcp": {
+  "mcpServers": {
     "cron402": {
-      "type": "local",
-      "command": ["/path/to/ai-cron-site/packages/mcp/abra-start.sh"],
-      "enabled": true
+      "command": "npx",
+      "args": ["-y", "cron402-mcp"],
+      "env": { "CRON402_PRIVATE_KEY": "0x..." }
     }
   }
 }
 ```
+
+**Local dev from repo:**
+
+```bash
+pnpm --filter cron402-mcp build
+packages/mcp/abra-start.sh   # key from abracadabra vault (Touch ID gated)
+```
+
+See [packages/mcp/PUBLISHING.md](packages/mcp/PUBLISHING.md) for release instructions.
 
 Env (optional overrides): `CRON402_NETWORK` (`eip155:8453` mainnet default, `eip155:84532` for Sepolia), `CRON402_API_URL`, `CRON402_ABRA_PROJECT` (default `ai-cron-site`). If `CRON402_PRIVATE_KEY` is already set in the environment, the vault lookup is skipped.
 

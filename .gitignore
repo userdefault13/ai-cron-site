@@ -12,3 +12,5 @@ dist/
 .turbo/
 .vercel
 .env*
+
+.npmrc.local

@@ -8,7 +8,8 @@
 		"lint": "biome check .",
 		"format": "biome format --write .",
 		"dev:api": "pnpm --filter @cron402/api dev",
-		"dev:web": "pnpm --filter @cron402/web dev"
+		"dev:web": "pnpm --filter @cron402/web dev",
+		"publish:mcp": "pnpm --filter cron402-mcp publish --access public"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.0.6",
