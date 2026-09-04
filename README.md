@@ -226,7 +226,7 @@ See [packages/mcp/PUBLISHING.md](packages/mcp/PUBLISHING.md) for release instruc
 
 Env (optional overrides): `CRON402_NETWORK` (`eip155:8453` mainnet default, `eip155:84532` for Sepolia), `CRON402_API_URL`, `CRON402_ABRA_PROJECT` (default `ai-cron-site`). If `CRON402_PRIVATE_KEY` is already set in the environment, the vault lookup is skipped.
 
-**Agent wallet:** `0x269B9678bEe6F5E4972C6e65522D763bA510d29f` — stored encrypted in the abracadabra vault as `ai-cron-site / EVM_PRIVATE_KEY`. On mainnet it needs **mainnet USDC** (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`) + a little ETH for gas. This is the *payer*; revenue flows to the Worker's `PAY_TO_ADDRESS` secret.
+**Agent wallet:** `0xfD4AE5BD56d9BB939B95CCb870E0c97B62E0dC30` — stored encrypted in the abracadabra vault as `ai-cron-site / EVM_PRIVATE_KEY`. (It replaced `0x269B9678…`, which was rotated out after its key was briefly committed to this repo and swept; never hardcode the key, read it from the vault.) On mainnet it needs **mainnet USDC** (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`) + a little ETH for gas. This is the *payer*; revenue flows to the Worker's `PAY_TO_ADDRESS` secret.
 
 ---
 
