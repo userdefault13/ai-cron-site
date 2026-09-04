@@ -1,12 +1,18 @@
 #!/usr/bin/env node
-import { privateKeyToAccount } from "viem/accounts";
-import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
+import { execSync } from "node:child_process";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
+import { wrapFetchWithPayment, x402Client } from "@x402/fetch";
+import { privateKeyToAccount } from "viem/accounts";
 
-const PRIVATE_KEY = "0x2a67dba4e7e25347318bf1540d09ec1c430f7f6cea0c4759433f74bb426261ad";
-const API_URL = "https://cron402-api.user-defaults.workers.dev";
+const API_URL = process.env.CRON402_API_URL ?? "https://cron402-api.user-defaults.workers.dev";
 
-const account = privateKeyToAccount(PRIVATE_KEY);
+// Never hardcode the key: take it from the environment, else the abracadabra
+// vault (Touch ID gated). See AGENTS.md.
+const key =
+	process.env.CRON402_PRIVATE_KEY ??
+	execSync("abra get ai-cron-site EVM_PRIVATE_KEY", { encoding: "utf8" }).trim();
+const account = privateKeyToAccount(key);
+console.log("payer:", account.address);
 const client = new x402Client();
 registerExactEvmScheme(client, { signer: account });
 const paidFetch = wrapFetchWithPayment(globalThis.fetch, client);

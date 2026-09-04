@@ -13,4 +13,5 @@ dist/
 .vercel
 .env*
 
+.npmrc
 .npmrc.local
