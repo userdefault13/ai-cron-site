@@ -3,19 +3,19 @@
 	"name": "io.github.userdefault13/cron402-mcp",
 	"title": "cron402",
 	"description": "Schedule webhook calls, pay per run in USDC on Base via x402. Ten tools, built for small models.",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"repository": {
 		"url": "https://github.com/userdefault13/ai-cron-site",
 		"source": "github",
 		"subfolder": "packages/mcp"
 	},
-	"websiteUrl": "https://web-seven-ecru-65.vercel.app",
+	"websiteUrl": "https://agentcron.site",
 	"packages": [
 		{
 			"registryType": "npm",
 			"registryBaseUrl": "https://registry.npmjs.org",
 			"identifier": "cron402-mcp",
-			"version": "1.1.0",
+			"version": "1.1.1",
 			"runtimeHint": "npx",
 			"runtimeArguments": [
 				{

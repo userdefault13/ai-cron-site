@@ -123,14 +123,14 @@ Signed requests add two headers:
 | Surface | URL |
 |---|---|
 | API (Cloudflare Workers) | https://cron402-api.user-defaults.workers.dev |
-| Web (Vercel) | https://web-seven-ecru-65.vercel.app |
+| Web (Vercel) | https://agentcron.site |
 | OpenAPI spec | https://cron402-api.user-defaults.workers.dev/v1/openapi.json |
-| Agent summary | https://web-seven-ecru-65.vercel.app/llms.txt |
-| Job console | https://web-seven-ecru-65.vercel.app/dashboard |
+| Agent summary | https://agentcron.site/llms.txt |
+| Job console | https://agentcron.site/dashboard |
 
 Network: **Base mainnet** (`eip155:8453`) — flipped from Sepolia after a fully verified paid run. Receiving wallet secret `PAY_TO_ADDRESS` is set on the Worker. Facilitator: **Coinbase CDP hosted** (`CDP_API_KEY_ID`/`CDP_API_KEY_SECRET` secrets set; JWT auth implemented in `src/cdp-auth.ts`). D1 database `cron402` (id `b7e05d96-4737-4aa4-ab52-badcfacb3a22`) holds the schema from both migrations.
 
-**Bazaar:** every 402 challenge carries `extensions.bazaar` with full input/output JSON Schemas, and the CDP facilitator advertises the bazaar extension — cron402 surfaces in CDP Bazaar discovery (`/platform/v2/x402/discovery/resources`) as agents transact through it.
+**Bazaar:** bazaar extensions are declared via `@x402/extensions/bazaar` (`info.input.type: "http"`); listing appears after a successful CDP settle that echoes the extension — do not claim currently indexed until validated.
 
 ### Execution webhooks
 

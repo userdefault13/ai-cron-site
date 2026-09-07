@@ -1,6 +1,6 @@
 # cron402-mcp
 
-MCP server for [cron402](https://web-seven-ecru-65.vercel.app) — schedule webhook calls and pay per run in USDC on Base via [x402](https://www.x402.org). No accounts, no API keys; your wallet is the credential.
+MCP server for [cron402](https://agentcron.site) — schedule webhook calls and pay per run in USDC on Base via [x402](https://www.x402.org). No accounts, no API keys; your wallet is the credential.
 
 Built so that **small models can drive it safely**: schedules can be written in plain
 English, every schedule can be validated for free before a paid call, and every
@@ -108,9 +108,9 @@ curl -sL https://raw.githubusercontent.com/userdefault13/ai-cron-site/main/skill
 
 ## Links
 
-- [Integration docs](https://web-seven-ecru-65.vercel.app/docs)
+- [Integration docs](https://agentcron.site/docs)
 - [OpenAPI spec](https://cron402-api.user-defaults.workers.dev/v1/openapi.json)
-- [Agent skill file](https://web-seven-ecru-65.vercel.app/skill.md)
+- [Agent skill file](https://agentcron.site/skill.md)
 - [Source](https://github.com/userdefault13/ai-cron-site)
 - [MCP Registry](https://registry.modelcontextprotocol.io)
 

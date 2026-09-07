@@ -57,7 +57,7 @@ const features = [
 		name="description"
 		content="Scheduled webhooks for AI agents. Pay per run in USDC on Base via x402. No accounts, no API keys — your wallet is the credential."
 	/>
-	<link rel="canonical" href="https://web-seven-ecru-65.vercel.app/" />
+	<link rel="canonical" href="https://agentcron.site/" />
 
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="cron402" />
@@ -66,7 +66,7 @@ const features = [
 		property="og:description"
 		content="Schedule webhook calls with a single signed request. $0.008 USDC per run on Base via the x402 protocol."
 	/>
-	<meta property="og:url" content="https://web-seven-ecru-65.vercel.app/" />
+	<meta property="og:url" content="https://agentcron.site/" />
 	<meta name="twitter:card" content="summary" />
 	<meta name="twitter:title" content="cron402 — pay-per-run cron for AI agents" />
 	<meta

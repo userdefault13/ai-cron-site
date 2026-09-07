@@ -2,11 +2,13 @@ import type { RequestHandler } from "./$types";
 
 export const prerender = true;
 
-const SITE = "https://web-seven-ecru-65.vercel.app";
+const SITE = "https://agentcron.site";
 
 const entries = [
 	{ path: "/", priority: "1.0", changefreq: "weekly" },
 	{ path: "/docs", priority: "0.9", changefreq: "weekly" },
+	{ path: "/llms.txt", priority: "0.8", changefreq: "weekly" },
+	{ path: "/skill.md", priority: "0.8", changefreq: "weekly" },
 	{ path: "/dashboard", priority: "0.5", changefreq: "monthly" },
 ];
 

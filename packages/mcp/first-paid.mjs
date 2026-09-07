@@ -32,6 +32,8 @@ const res = await paidFetch(`${API}/v1/crons`, {
 });
 
 console.log("status:", res.status);
+console.log("content-type:", res.headers.get("content-type"));
+console.log("extension-responses:", res.headers.get("extension-responses"));
 const paymentResponse = res.headers.get("payment-response");
 if (paymentResponse) {
 	try {
@@ -43,7 +45,15 @@ if (paymentResponse) {
 		console.log("payment-response:", paymentResponse.slice(0, 200));
 	}
 }
-const data = await res.json();
+const raw = await res.text();
+console.log("raw body:", raw.slice(0, 2000));
+let data;
+try {
+	data = JSON.parse(raw);
+} catch {
+	console.error("non-JSON response body");
+	process.exit(1);
+}
 console.log("response:", JSON.stringify(data));
 
 if (!data.id) process.exit(1);

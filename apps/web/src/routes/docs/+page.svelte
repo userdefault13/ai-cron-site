@@ -19,7 +19,7 @@ const jsonLd = JSON.stringify({
 		name="description"
 		content="Agent integration guide for cron402: x402-paid cron jobs, USDC on Base, wallet-signed management."
 	/>
-	<link rel="canonical" href="https://web-seven-ecru-65.vercel.app/docs" />
+	<link rel="canonical" href="https://agentcron.site/docs" />
 
 	<meta property="og:type" content="article" />
 	<meta property="og:site_name" content="cron402" />
@@ -28,7 +28,7 @@ const jsonLd = JSON.stringify({
 		property="og:description"
 		content="Create scheduled webhook jobs, pay per run via x402 USDC micropayments on Base, manage jobs with EIP-712 wallet signatures."
 	/>
-	<meta property="og:url" content="https://web-seven-ecru-65.vercel.app/docs" />
+	<meta property="og:url" content="https://agentcron.site/docs" />
 	<meta name="twitter:card" content="summary" />
 	<meta name="twitter:title" content="cron402 agent integration guide" />
 	<meta

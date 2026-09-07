@@ -26,3 +26,11 @@ Rules:
 - The user must approve each request via Touch ID — if denied, stop and ask.
 - For running/starting services yourself, prefer telling the user:
   `abra run ai-cron-site -- <cmd>` injects everything automatically.
+
+## Agent stack (cron402 × abracadabra)
+
+See [docs/AGENT-STACK.md](docs/AGENT-STACK.md). ClawHub:
+[cron402](https://clawhub.ai/userdefault13/skills/cron402) ·
+[abracadabra](https://clawhub.ai/userdefault13/skills/abracadabra).
+Secrets via abra only. Paid tools (`create_cron` / `topup_cron` / treasury pay):
+confirm once with the human — never auto-spend.

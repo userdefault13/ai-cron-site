@@ -1,6 +1,6 @@
 {
 	"name": "cron402-mcp",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"type": "module",
 	"mcpName": "io.github.userdefault13/cron402-mcp",
 	"description": "MCP server exposing cron402 — schedule webhook calls and pay per run in USDC on Base via x402. Built for small models: plain-English schedules, free preview before paying, and step-by-step guidance in every response.",
@@ -28,7 +28,7 @@
 		"type": "git",
 		"url": "git+https://github.com/userdefault13/ai-cron-site.git"
 	},
-	"homepage": "https://web-seven-ecru-65.vercel.app",
+	"homepage": "https://agentcron.site",
 	"bugs": {
 		"url": "https://github.com/userdefault13/ai-cron-site/issues"
 	},

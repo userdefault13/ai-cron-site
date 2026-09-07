@@ -13,6 +13,7 @@ import type { RoutesConfig } from "@x402/core/server";
 import { HTTPFacilitatorClient } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { paymentMiddleware, x402ResourceServer } from "@x402/hono";
+import { declareDiscoveryExtension } from "@x402/extensions/bazaar";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { parseManageHeaders, verifyManageSignature } from "./auth";
@@ -39,21 +40,6 @@ const TOPUP_PACKS = [
 	{ path: "/v1/crons/topup/100", runs: 100, price: 0.8 },
 ] as const;
 
-function bazaarExtension(
-	description: string,
-	input: Record<string, unknown>,
-	output: Record<string, unknown>,
-) {
-	return {
-		bazaar: {
-			description,
-			input,
-			output,
-			mimeType: "application/json",
-		},
-	};
-}
-
 function routesConfig(env: Env): RoutesConfig {
 	const network = (env.X402_NETWORK || "eip155:84532") as `${string}:${string}`;
 	// biome-ignore lint/suspicious/noExplicitAny: partial route config assembled dynamically
@@ -68,11 +54,21 @@ function routesConfig(env: Env): RoutesConfig {
 			description:
 				"cron402: create a cron job that calls your webhook on a schedule. $0.008 includes 1 run credit; each subsequent run costs 1 credit (top up at /v1/crons/topup/{pack}).",
 			mimeType: "application/json",
-			extensions: bazaarExtension(
-				"Create a scheduled webhook job. Body: cron expression + target URL/method/headers/body. Returns { id } — poll /v1/crons/{id} for status and execution logs.",
-				createCronRequestJsonSchema,
-				createCronResponseJsonSchema,
-			),
+			extensions: {
+				...declareDiscoveryExtension({
+					bodyType: "json",
+					input: {
+						schedule: "0 * * * *",
+						target: { url: "https://example.com/hook", method: "POST" },
+						maxRuns: 10,
+					},
+					inputSchema: createCronRequestJsonSchema,
+					output: {
+						example: { id: "00000000-0000-4000-8000-000000000000", statusUrl: "/v1/crons/00000000-0000-4000-8000-000000000000", credits: 1 },
+						schema: createCronResponseJsonSchema,
+					},
+				}),
+			},
 		},
 	};
 	for (const pack of TOPUP_PACKS) {
@@ -85,11 +81,17 @@ function routesConfig(env: Env): RoutesConfig {
 			},
 			description: `cron402: add ${pack.runs} prepaid run credit${pack.runs > 1 ? "s" : ""} ($${pack.price}) to an existing job. Reactivates exhausted jobs.`,
 			mimeType: "application/json",
-			extensions: bazaarExtension(
-				`Top up ${pack.runs} run credit${pack.runs > 1 ? "s" : ""} for job jobId.`,
-				topupRequestJsonSchema,
-				topupResponseJsonSchema,
-			),
+			extensions: {
+				...declareDiscoveryExtension({
+					bodyType: "json",
+					input: { jobId: "00000000-0000-4000-8000-000000000000" },
+					inputSchema: topupRequestJsonSchema,
+					output: {
+						example: { jobId: "00000000-0000-4000-8000-000000000000", runsAdded: pack.runs, credits: pack.runs },
+						schema: topupResponseJsonSchema,
+					},
+				}),
+			},
 		};
 	}
 	return routes as RoutesConfig;
@@ -202,11 +204,11 @@ app.post("/v1/crons", async (c) => {
 
 	const id = crypto.randomUUID();
 	const now = Date.now();
-	await c.env.DB.prepare(
-		`INSERT INTO jobs (id, payer_address, schedule, target_url, target_method, target_headers, target_body, credits, status, next_run_at, created_at, notify_url)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'active', NULL, ?, ?)`,
-	)
-		.bind(
+	await c.env.DB.batch([
+		c.env.DB.prepare(
+			`INSERT INTO jobs (id, payer_address, schedule, target_url, target_method, target_headers, target_body, credits, status, next_run_at, created_at, notify_url)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'active', NULL, ?, ?)`,
+		).bind(
 			id,
 			payer,
 			parsed.data.schedule,
@@ -216,20 +218,28 @@ app.post("/v1/crons", async (c) => {
 			parsed.data.target.body ?? null,
 			now,
 			parsed.data.notifyUrl ?? null,
-		)
-		.run();
-	await c.env.DB.prepare(
-		"INSERT INTO payments (job_id, payer_address, amount_usd, runs, created_at) VALUES (?, ?, ?, 1, ?)",
-	)
-		.bind(id, payer, String(PRICE_PER_RUN_USD), now)
-		.run();
+		),
+		c.env.DB.prepare(
+			"INSERT INTO payments (job_id, payer_address, amount_usd, runs, created_at) VALUES (?, ?, ?, 1, ?)",
+		).bind(id, payer, String(PRICE_PER_RUN_USD), now),
+	]);
 
-	await stubFor(c.env, id).init({
-		id,
-		schedule: parsed.data.schedule,
-		target: parsed.data.target,
-		notifyUrl: parsed.data.notifyUrl ?? null,
-	});
+	try {
+		await stubFor(c.env, id).init({
+			id,
+			schedule: parsed.data.schedule,
+			target: parsed.data.target,
+			notifyUrl: parsed.data.notifyUrl ?? null,
+		});
+	} catch (err) {
+		await c.env.DB.prepare(
+			"UPDATE jobs SET status = 'deleted', next_run_at = NULL WHERE id = ?",
+		)
+			.bind(id)
+			.run();
+		await c.env.DB.prepare("DELETE FROM payments WHERE job_id = ?").bind(id).run();
+		return c.json({ error: "failed to start scheduler", detail: String(err) }, 502);
+	}
 
 	return c.json({ id, statusUrl: `/v1/crons/${id}`, credits: 1 }, 201);
 });
@@ -313,6 +323,23 @@ app.post("/v1/crons/:id/resume", async (c) => {
 });
 
 // ---- sweeper: re-kick DOs whose alarms were missed ----
+function targetFromRow(row: JobDbRow): import("@cron402/shared").CronTarget {
+	let headers: Record<string, string> | undefined;
+	if (row.target_headers) {
+		try {
+			headers = JSON.parse(row.target_headers) as Record<string, string>;
+		} catch {
+			headers = undefined;
+		}
+	}
+	return {
+		url: row.target_url,
+		method: row.target_method === "GET" ? "GET" : "POST",
+		...(headers ? { headers } : {}),
+		...(row.target_body != null ? { body: row.target_body } : {}),
+	};
+}
+
 async function sweep(env: Env): Promise<void> {
 	const cutoff = Date.now() - 90_000;
 	const due = await env.DB.prepare(
@@ -322,6 +349,28 @@ async function sweep(env: Env): Promise<void> {
 		.all<{ id: string }>();
 	for (const job of due.results ?? []) {
 		await stubFor(env, job.id).kick();
+	}
+
+	// Recover orphans: active with null next_run_at (DO init never completed)
+	const orphans = await env.DB.prepare(
+		"SELECT * FROM jobs WHERE status = 'active' AND next_run_at IS NULL LIMIT 100",
+	).all<JobDbRow>();
+	for (const row of orphans.results ?? []) {
+		try {
+			await stubFor(env, row.id).init({
+				id: row.id,
+				schedule: row.schedule,
+				target: targetFromRow(row),
+				notifyUrl: row.notify_url ?? null,
+			});
+		} catch {
+			// Soft-delete only — do not delete historical payments/credits
+			await env.DB.prepare(
+				"UPDATE jobs SET status = 'deleted', next_run_at = NULL WHERE id = ?",
+			)
+				.bind(row.id)
+				.run();
+		}
 	}
 }
 
