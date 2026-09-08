@@ -2,9 +2,11 @@
 
 ## Purpose
 
-Schedule publicly reachable URLs on a repeating cron via the cron402 MCP server
-(x402 micropayments in USDC on Base). Agents follow check_wallet → preview →
-create → topup → get/list → manage. Companion vault:
+Operate cron402 / agentcron.site paid webhook jobs via the cron402 MCP server
+(x402 micropayments in USDC on Base). Applies only when the user names cron402,
+agentcron, or the cron402 MCP, or manages a job already created there — not for
+reminders, local timers, or generic "run this later" requests. Agents follow
+check_wallet → preview → create → topup → get/list → manage. Companion vault:
 [abracadabra](https://clawhub.ai/userdefault13/skills/abracadabra).
 
 
