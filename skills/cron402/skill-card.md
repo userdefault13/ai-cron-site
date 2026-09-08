@@ -24,6 +24,7 @@ vault → (optional License/cartridge) → lockfile cron402-mcp via `abra run` �
 - **Dedicated low-balance wallet** for cron402 spend.
 - **Never paste** private keys / ABRA_KEY into chat.
 - **Paid tools** require explicit confirmation; call once per request.
+- **Delete erases** stored headers/body/notifyUrl/query from D1 + DO; rotate credentials at the target (erase ≠ revoke).
 - **Abra License:** gated one-shot after vault OK if cartridge empty; never auto-buy.
   Concierge Access required to open Terminal mint:
   https://www.aarcadeghst.com/concierge/terminal
