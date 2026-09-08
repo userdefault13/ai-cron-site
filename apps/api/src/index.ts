@@ -137,6 +137,35 @@ function stubFor(env: Env, jobId: string): CronJobDOStub {
 	return env.CRON_JOB_DO.get(env.CRON_JOB_DO.idFromName(jobId)) as unknown as CronJobDOStub;
 }
 
+/** Strip query string and fragment so a deleted row keeps only origin + path. */
+function stripUrlSecrets(url: string): string {
+	try {
+		const u = new URL(url);
+		return `${u.origin}${u.pathname}`;
+	} catch {
+		return "";
+	}
+}
+
+/**
+ * Soft-delete a job AND erase its replayable request config from D1.
+ * Headers, body, notify URL, and the target query string are set to NULL /
+ * stripped so a deleted row cannot be used to reconstruct a credential.
+ * Payments and execution history (status codes, short errors) are kept.
+ */
+async function deleteAndScrubJob(
+	env: Env,
+	row: Pick<JobDbRow, "id" | "target_url">,
+): Promise<void> {
+	await env.DB.prepare(
+		`UPDATE jobs SET status = 'deleted', next_run_at = NULL,
+		 target_headers = NULL, target_body = NULL, notify_url = NULL, target_url = ?
+		 WHERE id = ?`,
+	)
+		.bind(stripUrlSecrets(row.target_url), row.id)
+		.run();
+}
+
 function toView(row: JobDbRow): JobView {
 	return {
 		id: row.id,
@@ -232,11 +261,10 @@ app.post("/v1/crons", async (c) => {
 			notifyUrl: parsed.data.notifyUrl ?? null,
 		});
 	} catch (err) {
-		await c.env.DB.prepare(
-			"UPDATE jobs SET status = 'deleted', next_run_at = NULL WHERE id = ?",
-		)
-			.bind(id)
-			.run();
+		await deleteAndScrubJob(c.env, { id, target_url: parsed.data.target.url });
+		await stubFor(c.env, id)
+			.destroy()
+			.catch(() => {});
 		await c.env.DB.prepare("DELETE FROM payments WHERE job_id = ?").bind(id).run();
 		return c.json({ error: "failed to start scheduler", detail: String(err) }, 502);
 	}
@@ -296,11 +324,23 @@ app.get("/v1/crons/:id", async (c) => {
 app.delete("/v1/crons/:id", async (c) => {
 	const { row, error } = await requireOwnedJob(c, c.req.param("id"), "delete");
 	if (error) return error;
-	await c.env.DB.prepare("UPDATE jobs SET status = 'deleted', next_run_at = NULL WHERE id = ?")
-		.bind(row.id)
-		.run();
-	await stubFor(c.env, row.id).cancel();
-	return c.json({ ok: true, id: row.id, status: "deleted" });
+	// Erase replayable config from the Durable Object first, then from D1.
+	await stubFor(c.env, row.id).destroy();
+	await deleteAndScrubJob(c.env, row);
+	return c.json({
+		ok: true,
+		id: row.id,
+		status: "deleted",
+		erased: ["target_headers", "target_body", "notify_url", "target_url_query"],
+		retained: [
+			"target_url_origin_and_path",
+			"target_method",
+			"schedule",
+			"payer_address",
+			"executions",
+			"payments",
+		],
+	});
 });
 
 app.post("/v1/crons/:id/pause", async (c) => {
@@ -364,12 +404,11 @@ async function sweep(env: Env): Promise<void> {
 				notifyUrl: row.notify_url ?? null,
 			});
 		} catch {
-			// Soft-delete only — do not delete historical payments/credits
-			await env.DB.prepare(
-				"UPDATE jobs SET status = 'deleted', next_run_at = NULL WHERE id = ?",
-			)
-				.bind(row.id)
-				.run();
+			// Soft-delete + scrub config — do not delete historical payments/credits
+			await deleteAndScrubJob(env, row);
+			await stubFor(env, row.id)
+				.destroy()
+				.catch(() => {});
 		}
 	}
 }

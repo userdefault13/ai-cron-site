@@ -22,4 +22,5 @@ export interface CronJobDOStub {
 	kick(): Promise<void>;
 	resume(): Promise<void>;
 	cancel(): Promise<void>;
+	destroy(): Promise<void>;
 }

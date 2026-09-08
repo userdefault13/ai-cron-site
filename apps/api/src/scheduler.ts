@@ -79,6 +79,16 @@ export class CronJobDO extends DurableObject<Env> {
 		await this.ctx.storage.deleteAlarm();
 	}
 
+	/**
+	 * Permanent delete: drop the alarm and erase ALL stored state, including
+	 * target url/headers/body and notifyUrl. Nothing replayable survives.
+	 * Later kick/resume/alarm calls find no job and return.
+	 */
+	async destroy(): Promise<void> {
+		await this.ctx.storage.deleteAlarm();
+		await this.ctx.storage.deleteAll();
+	}
+
 	private async reactivate(): Promise<void> {
 		const job = await this.ctx.storage.get<JobState>("job");
 		if (!job || job.status === "active" || job.status === "deleted") return;

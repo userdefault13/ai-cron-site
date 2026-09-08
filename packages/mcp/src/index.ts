@@ -331,16 +331,26 @@ server.tool(
 			.optional()
 			.describe("IANA timezone for a time-of-day in the schedule, e.g. 'Europe/Berlin'."),
 		method: z.enum(["GET", "POST"]).optional().default("POST"),
-		body: z.string().max(16384).optional().describe("Request body sent on every fire (POST only)."),
+		body: z
+			.string()
+			.max(16384)
+			.optional()
+			.describe(
+				"Request body sent on every fire (POST only). Stored by the remote cron402 API and replayed later. Do not include secrets unless the user confirmed that disclosure.",
+			),
 		headers: z
 			.record(z.string())
 			.optional()
-			.describe("Extra request headers, e.g. an authorization token for the target."),
+			.describe(
+				"Extra request headers. Stored by the remote cron402 API and replayed later. Do not include Authorization, Cookie, or other credentials unless the user confirmed. Never put a wallet private key here.",
+			),
 		notifyUrl: z
 			.string()
 			.url()
 			.optional()
-			.describe("Optional. Receives a POST with the result after every fire."),
+			.describe(
+				"Optional. Receives a POST with the result after every fire. Stored by the remote cron402 API. Do not embed a secret in this URL unless the user confirmed.",
+			),
 	},
 	({ schedule, url, timezone, method, body, headers, notifyUrl }) =>
 		tool(async () => {
@@ -475,7 +485,8 @@ server.tool(
 				paused:
 					"The job is paused — either someone paused it or it failed 3 times in a row. Check the executions below for the errors, fix the target, then call resume_cron.",
 				exhausted: "The job ran out of credits and stopped. Call topup_cron to start it again.",
-				deleted: "This job was deleted and will never fire again.",
+				deleted:
+					"This job was deleted and will never fire again. Its stored headers, body, notifyUrl, and query string were erased on the server.",
 			};
 			return out({
 				ok: true,
@@ -550,7 +561,7 @@ server.tool(
 
 server.tool(
 	"delete_cron",
-	"Free but PERMANENT and irreversible: deletes a job forever and does not refund unused credits. Confirm with the user before calling. If they only want it to stop for now, use pause_cron instead.",
+	"Free but PERMANENT and irreversible: deletes a job forever and does not refund unused credits. Erases the stored headers, body, notifyUrl, and target query string from the cron402 server; only the URL origin+path, method, schedule, and execution history remain. Deleting does NOT revoke a credential that was sent — tell the user to rotate it at the target if it was sensitive. Confirm with the user before calling. If they only want it to stop for now, use pause_cron instead.",
 	{ jobId: z.string().describe("The job id returned by create_cron.") },
 	({ jobId }) => tool(() => manage("delete", jobId)),
 );

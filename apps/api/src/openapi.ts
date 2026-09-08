@@ -129,16 +129,20 @@ Min interval 1 minute · max ${MAX_ACTIVE_JOBS_PER_WALLET} active jobs per walle
 				delete: {
 					tags: ["management"],
 					summary: "Delete a job (wallet-signed)",
+					description:
+						"Permanent. Stops the schedule and erases the replayable request config: stored headers, body, notify URL, and the target URL query string are removed from D1 and the job's Durable Object state is wiped. Retained: target URL origin and path, method, schedule, payer address, payment records, and execution history (status codes and short error strings, last 100 runs or 30 days). Cloudflare D1 keeps point-in-time backups for up to 30 days outside this API's control. Deleting a job does not revoke any credential that was sent in it — rotate it at the target.",
 					parameters: managementHeaders(),
 					responses: {
 						200: {
-							description: "Job deleted",
+							description: "Job deleted and request config erased",
 							content: jsonContent({
 								type: "object",
 								properties: {
 									ok: { type: "boolean" },
 									id: { type: "string" },
 									status: { const: "deleted" },
+									erased: { type: "array", items: { type: "string" } },
+									retained: { type: "array", items: { type: "string" } },
 								},
 							}),
 						},

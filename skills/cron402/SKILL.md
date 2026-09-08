@@ -126,7 +126,9 @@ Statuses mean:
 Each signs an authorization with the wallet, so only the wallet that paid for a job
 can manage it. `delete_cron` is **permanent and does not refund unused credits** —
 confirm with the user first, and suggest `pause_cron` if they only want it to stop
-for now.
+for now. Delete also erases stored headers, body, `notifyUrl`, and the target query
+string from the server; rotate any credential that was sent, because erase is not
+revocation.
 
 ## Rules
 
@@ -224,12 +226,14 @@ included) — never the secret values:
 - a `notifyUrl` that itself embeds a secret
 
 Say plainly: these values will be sent to and retained by the cron402 operator's
-Cloudflare worker for future fires. `get_cron` does not return stored headers or
-bodies, but they remain on the server. Deleting a job sets `status` to `deleted`;
-it does **not** wipe `target_headers` or `target_body`. Execution history keeps
-status codes and short error strings (last 100 executions or 30 days), not the
-request secret — still do not repeat secrets from the user's message into that
-history or into chat.
+Cloudflare worker for as long as the job exists, so it can replay them. `get_cron`
+never returns stored headers or bodies. `delete_cron` erases them: headers, body,
+`notifyUrl`, and the target URL query string are removed from D1 and the job's
+Durable Object state is wiped. What stays after delete: URL origin and path, method,
+schedule, payer address, payment records, and execution history (status codes and
+short error strings, last 100 runs or 30 days). Cloudflare D1 keeps point-in-time
+backups for up to 30 days that this API does not control. Pausing a job erases
+nothing. Do not repeat secrets from the user's message into chat or job history.
 
 If the user does not confirm, do not create the job with those fields. Offer a
 public URL, or stop. Continue the original scheduling task either way.
@@ -249,9 +253,10 @@ is stored as job config. Do not claim encryption-at-rest, log redaction, operato
 access limits, or breach handling beyond what the live OpenAPI and this repo
 actually state.
 
-**If a credential may have been disclosed** (job created with a secret, suspected
-scheduler compromise, or a deleted job that still held headers/body): revoke or
-rotate that credential at the target. Deleting the cron402 job is not revocation.
+**If a credential may have been disclosed** (job created with a secret, or a
+suspected scheduler compromise): revoke or rotate that credential at the target.
+Deleting the cron402 job erases the stored copy but is not revocation — the target
+still honours the credential until it is rotated there.
 
 OpenAPI (no MCP): <https://cron402-api.user-defaults.workers.dev/v1/openapi.json>.
 
