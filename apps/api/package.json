@@ -6,7 +6,9 @@
 	"scripts": {
 		"dev": "wrangler dev --port 8787",
 		"build": "tsc --noEmit",
-		"check": "tsc --noEmit",
+		"check": "tsc --noEmit && tsc --noEmit -p test/tsconfig.json",
+		"test": "vitest run",
+		"test:watch": "vitest",
 		"deploy": "wrangler deploy",
 		"db:local": "wrangler d1 execute cron402 --local --file=migrations/0001_init.sql"
 	},
@@ -23,8 +25,10 @@
 		"zod": "^3.24.1"
 	},
 	"devDependencies": {
+		"@cloudflare/vitest-plugin": "^1.4.8",
 		"@cloudflare/workers-types": "^4.20250110.0",
 		"typescript": "^5.7.2",
+		"vitest": "^4.1.0",
 		"wrangler": "^3.100.0"
 	}
 }
