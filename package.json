@@ -5,6 +5,7 @@
 	"scripts": {
 		"build": "turbo run build",
 		"check": "turbo run check",
+		"test": "turbo run test",
 		"lint": "biome check .",
 		"format": "biome format --write .",
 		"dev:api": "pnpm --filter @cron402/api dev",

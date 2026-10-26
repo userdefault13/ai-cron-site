@@ -1,41 +1,65 @@
 # cron402
 
-x402-native **cron-as-a-service for AI agents**. Agents schedule webhook calls and pay per run in USDC on Base via the [x402 protocol](https://www.x402.org/) — no accounts, no API keys. The wallet *is* the credential.
+[![CI](https://github.com/userdefault13/ai-cron-site/actions/workflows/ci.yml/badge.svg)](https://github.com/userdefault13/ai-cron-site/actions/workflows/ci.yml)
 
-- **Price:** $0.008 flat per run
-- **Network:** Base mainnet (`eip155:8453`) — validated end-to-end on Sepolia first (settlement tx `0x01f7bed4…`)
-- **Wallets:** built for Coinbase Agentic Wallets / any x402 client
+**Prepaid cron jobs for AI agents, paid per run in USDC over [x402](https://www.x402.org/).** An agent asks cron402 to call a webhook on a schedule, pays $0.008 per run from its own wallet, and manages the job with wallet signatures. There are no accounts or API keys: the wallet is the credential.
+
+| | |
+|---|---|
+| **Site** | https://agentcron.site (docs, `llms.txt`, wallet dashboard) |
+| **API** | https://cron402-api.user-defaults.workers.dev ([OpenAPI](https://cron402-api.user-defaults.workers.dev/v1/openapi.json)) |
+| **Price** | $0.008 USDC per run on Base mainnet (`eip155:8453`); 1 / 10 / 100-run top-up packs |
+| **Agent entry points** | [`cron402-mcp`](https://www.npmjs.com/package/cron402-mcp) MCP server, [`skills/cron402`](skills/cron402/SKILL.md) agent skill, plain HTTP + any x402 client |
+| **Stack** | Cloudflare Workers (Hono), Durable Objects, D1, `@x402/hono`, viem, SvelteKit, TypeScript, pnpm + Turborepo |
+| **Tests** | 38 tests running in the real Workers runtime (`@cloudflare/vitest-plugin`), on every push and PR. See [Testing](#testing). |
+
+### What it does
+
+1. **Create:** `POST /v1/crons` with a cron expression and a target URL. The first call returns `402 Payment Required`; the agent signs an EIP-3009 USDC authorization and retries. The facilitator verifies and settles, and the job starts with 1 run credit.
+2. **Run:** each job lives in its own Durable Object. Its alarm fires at the next cron time, calls the webhook with retries, logs the result to D1, and spends one credit.
+3. **Top up:** `POST /v1/crons/topup/{1,10,100}` adds credits (anyone can fund any job). Exhausted jobs reactivate.
+4. **Manage:** pause, resume and delete require an EIP-712 `ManageJob { action, jobId, timestamp }` signature from the wallet that paid, valid for ±5 minutes.
 
 ---
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    agent["AI agent<br/>(cron402-mcp, skill, or any x402 client)"]
+    human["Human<br/>(agentcron.site dashboard)"]
+    subgraph cf["Cloudflare Worker: apps/api"]
+        hono["Hono router<br/>+ x402 paywall (@x402/hono)"]
+        auth["EIP-712 manage auth<br/>(auth.ts)"]
+        sweep["Cron Trigger sweeper<br/>(every minute)"]
+        do["CronJobDO<br/>one Durable Object per job<br/>alarm() fires the run"]
+        d1[("D1<br/>jobs · executions · payments")]
+    end
+    fac["x402 facilitator<br/>(Coinbase CDP)"]
+    base[("USDC on Base")]
+    hook["Agent's webhook"]
+
+    agent -- "HTTP + x402 payment" --> hono
+    human -- "wallet-signed pause/resume/delete" --> hono
+    hono -- "verify / settle" --> fac
+    fac --> base
+    hono --> auth
+    hono -- "init / resume / cancel / destroy (RPC)" --> do
+    hono --> d1
+    do -- "scheduled call (retries, 10s timeout)" --> hook
+    do -- "log run, spend credit, next_run_at" --> d1
+    sweep -- "re-arm missed alarms,<br/>recover orphaned jobs" --> do
+    sweep --> d1
 ```
-┌────────────────────────────┐        ┌─────────────────────────────────────────┐
-│  apps/web — SvelteKit      │        │  apps/api — Cloudflare Worker (Hono)    │
-│  deployed to Vercel        │──────▶ │                                         │
-│  - landing page            │        │  x402 paywall (@x402/hono v2)           │
-│  - agent integration docs  │        │  ├─ POST /v1/crons            $0.008    │
-│                            │        │  ├─ POST /v1/crons/topup/1|10|100       │
-│                            │        │  ├─ GET  /v1/crons/:id        (free)    │
-│                            │        │  ├─ POST /v1/crons/:id/pause|resume     │
-│                            │        │  └─ DELETE /v1/crons/:id   (EIP-712)    │
-└────────────────────────────┘        │                                         │
-                                      │  CronJobDO (Durable Object per job)     │
-                                      │  alarm() → dispatch webhook             │
-                                      │  D1: jobs, executions, payments         │
-                                      └─────────────────────────────────────────┘
-                                                │ settle via facilitator
-                                                ▼
-                                         USDC on Base (Sepolia/mainnet)
-```
+
+The web app (`apps/web`, SvelteKit on Vercel) serves the landing page, agent docs, `llms.txt` and a wallet-connected job console. It talks to the same public API.
 
 ### How scheduling works
 
 - Every job gets its own **Durable Object** (`CronJobDO`). A `cron-parser`-computed next-run time is set as the DO's `alarm()` — exact to the minute for arbitrary cron expressions.
 - Each fire: dispatch the target webhook (10s timeout) → up to 3 attempts with backoff → log the execution to D1 (kept: last 100 runs / 30 days per job) → consume 1 credit.
 - Auto-pause rules: 3 consecutive failures → `paused`; zero credits → `exhausted`.
-- A global Worker Cron Trigger (`* * * * *`) sweeps for missed alarms as a safety net.
+- A global Worker Cron Trigger (`* * * * *`) sweeps for missed alarms as a safety net: it re-arms active jobs more than 90s overdue and re-initialises active jobs whose Durable Object never got set up (soft-deleting them if that fails, without touching payments).
 - Top-ups reactivate `paused`/`exhausted` jobs automatically.
 
 ### How payments work
@@ -56,9 +80,10 @@ Management actions (`pause`/`resume`/`delete`) require an EIP-712 signature over
 ## Repository layout
 
 ```
-dev/ai-cron-site/
+ai-cron-site/
+├── .github/workflows/ci.yml   # typecheck + tests on every push and PR
 ├── package.json               # pnpm workspaces + turbo tasks
-├── turbo.json                 # build/check/lint pipeline
+├── turbo.json                 # build/check/test/lint pipeline
 ├── biome.json                 # Biome lint/format config
 ├── .env.example               # all env vars documented
 ├── packages/shared/
@@ -73,6 +98,8 @@ dev/ai-cron-site/
     │   ├── wrangler.jsonc     # DO bindings, D1 binding, cron trigger
     │   ├── .dev.vars.example  # local dev vars template
     │   ├── migrations/        # D1 schema (0001 init, 0002 notify_url)
+    │   ├── vitest.config.ts   # Workers-runtime test pool (D1 + DO bindings, pinned test env)
+    │   ├── test/              # auth, scheduler, x402 and management tests
     │   └── src/
     │       ├── index.ts       # Hono app, routes, lazy x402 middleware
     │       ├── scheduler.ts   # CronJobDO (alarm loop, retries, retention, notify)
@@ -81,6 +108,7 @@ dev/ai-cron-site/
     │       ├── facilitator.ts # CDP hosted facilitator client
     │       ├── cdp-auth.ts    # CDP JWT signing (jose/WebCrypto)
     │       ├── openapi.ts     # OpenAPI 3.1 document builder
+    │       ├── moltbook.ts    # token-gated, read-only Moltbook heartbeat route
     │       └── types.ts       # Env bindings + typed DO stub interface
     └── web/                   # SvelteKit 5 → adapter-vercel (MS-DOS theme)
         └── src/routes/
@@ -268,7 +296,29 @@ curl -X POST http://127.0.0.1:8787/v1/crons/topup/10 \
   -d '{"jobId":"<jobId>"}'
 ```
 
-Quality gates: `pnpm lint` (Biome), `pnpm check` (tsc + svelte-check), `pnpm build`.
+Quality gates: `pnpm check` (tsc + svelte-check, including the test files), `pnpm test`, `pnpm lint` (Biome), `pnpm build`.
+
+---
+
+## Testing
+
+```bash
+pnpm install
+pnpm test                               # all workspaces (turbo)
+pnpm --filter @cron402/api test         # API only
+pnpm --filter @cron402/api test:watch   # watch mode
+```
+
+The API tests run inside `workerd`, the real Cloudflare Workers runtime, through [`@cloudflare/vitest-plugin`](https://developers.cloudflare.com/workers/testing/vitest-integration/). Each run gets a local D1 database with `apps/api/migrations` applied and real `CronJobDO` Durable Objects. Every outbound `fetch` (webhooks, notify URLs, the x402 facilitator) is mocked, so the suite needs no network, secrets or funds. Wallets are throwaway keys from viem's `generatePrivateKey()`. Test bindings are pinned in `vitest.config.ts`, so a local `.dev.vars` never leaks into a test run.
+
+| File | Covers |
+|---|---|
+| `test/auth.test.ts` | EIP-712 `ManageJob` verification: valid signature accepted; expired and future timestamps outside ±5 min rejected; another wallet's signature rejected; a signature replayed against a different action, job, timestamp or EIP-712 domain rejected; malformed input handled; header parsing |
+| `test/scheduler.test.ts` | `CronJobDO`: init arms the first alarm; an alarm fires the webhook, records the execution, spends a credit and re-arms; last credit leads to `exhausted`; no credits means no call; 4xx is not retried and counts as a failure; `notifyUrl` receives the run result. Sweeper: re-arms a past-due job with a lost alarm, respects the 90s grace window, recovers an orphaned job from its D1 row, soft-deletes and scrubs an orphan whose init fails (payments kept), ignores paused jobs |
+| `test/x402.test.ts` | Paid create flow: unpaid `POST /v1/crons` returns a 402 x402 v2 challenge (USDC on Base, $0.008, `payTo`, Bazaar extension) and creates nothing; a signed payment is verified, the handler runs, payment settles, and the job row, payment row and Durable Object alarm all exist; an invalid body is not settled; a facilitator-rejected payment returns 402 and creates nothing |
+| `test/manage.test.ts` | Signed routes end to end: pause, resume and delete with the payer's signature; another wallet gets 403; a pause signature replayed as delete gets 403; missing headers get 401; unknown job gets 404 |
+
+CI (`.github/workflows/ci.yml`) runs `pnpm install --frozen-lockfile`, `pnpm check` and `pnpm test` on every push and pull request.
 
 ---
 

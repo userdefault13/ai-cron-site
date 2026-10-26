@@ -24,7 +24,7 @@ export async function verifyManageSignature(params: {
 	}
 	try {
 		return await verifyTypedData({
-			...DOMAIN,
+			domain: DOMAIN,
 			types: {
 				ManageJob: [
 					{ name: "action", type: "string" },

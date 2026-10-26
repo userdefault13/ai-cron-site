@@ -71,10 +71,11 @@ export class CronJobDO extends DurableObject<Env> {
 		await this.reactivate();
 	}
 
+	/** Pause: drop the alarm but keep the job resumable (resume() reactivates "paused"). */
 	async cancel(): Promise<void> {
 		const job = await this.ctx.storage.get<JobState>("job");
 		if (!job) return;
-		job.status = "deleted";
+		job.status = "paused";
 		await this.ctx.storage.put("job", job);
 		await this.ctx.storage.deleteAlarm();
 	}

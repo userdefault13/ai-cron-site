@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Typecheck & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # SvelteKit generates .svelte-kit/tsconfig.json, which apps/web/tsconfig.json extends.
+      - run: pnpm --filter @cron402/web exec svelte-kit sync
+
+      - name: Typecheck (api, api tests, web, mcp, shared)
+        run: pnpm check
+
+      - name: Test (Workers runtime via @cloudflare/vitest-plugin; no network, no secrets)
+        run: pnpm test
